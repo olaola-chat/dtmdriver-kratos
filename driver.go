@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"strings"
@@ -51,6 +52,12 @@ func (k *kratosDriver) RegisterService(target string, endpoint string) error {
 	}
 	name := strings.TrimPrefix(u.Path, "/")
 	instanceId := name + "_" + id
+	if strings.Contains(endpoint, "localhost") {
+		localIp := GetLocalIP()
+		if localIp != "" {
+			endpoint = strings.ReplaceAll(endpoint, "localhost", localIp)
+		}
+	}
 	switch u.Scheme {
 	case DefaultScheme:
 		fallthrough
@@ -115,4 +122,20 @@ func (k *kratosDriver) ParseServerMethod(uri string) (server string, method stri
 
 func init() {
 	dtmdriver.Register(&kratosDriver{})
+}
+
+// GetLocalIP 获取本地IP
+func GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
 }
