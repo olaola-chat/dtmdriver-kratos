@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/dtm-labs/dtmdriver"
 	consul "github.com/go-kratos/kratos/contrib/registry/consul/v2"
@@ -80,7 +81,13 @@ func (k *kratosDriver) RegisterService(target string, endpoint string) error {
 		if err != nil {
 			return err
 		}
-		registry := consul.New(client)
+		registry := consul.New(
+			client,
+			consul.WithHealthCheck(true),
+			consul.WithHealthCheckInterval(10),
+			consul.WithHeartbeat(true),
+			consul.WithTimeout(time.Second*20),
+		)
 		//add resolver so that dtm can handle discovery://
 		resolver.Register(discovery.NewBuilder(registry, discovery.WithInsecure(true)))
 		return registry.Register(context.Background(), registerInstance)
