@@ -3,6 +3,10 @@ package driver
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
+
 	"github.com/dtm-labs/dtmdriver"
 	consul "github.com/go-kratos/kratos/contrib/registry/consul/v2"
 	etcd "github.com/go-kratos/kratos/contrib/registry/etcd/v2"
@@ -12,8 +16,6 @@ import (
 	consulAPI "github.com/hashicorp/consul/api"
 	etcdAPI "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc/resolver"
-	"net/url"
-	"strings"
 )
 
 const (
@@ -21,6 +23,10 @@ const (
 	DefaultScheme = "discovery"
 	EtcdScheme    = "etcd"
 	ConsulScheme  = "consul"
+)
+
+var (
+	id, _ = os.Hostname()
 )
 
 type kratosDriver struct{}
@@ -42,11 +48,14 @@ func (k *kratosDriver) RegisterService(target string, endpoint string) error {
 	if err != nil {
 		return err
 	}
+	name := strings.TrimPrefix(u.Path, "/")
+	instanceId := name + "_" + id
 	switch u.Scheme {
 	case DefaultScheme:
 		fallthrough
 	case EtcdScheme:
 		registerInstance := &registry.ServiceInstance{
+			ID:        instanceId,
 			Name:      strings.TrimPrefix(u.Path, "/"),
 			Endpoints: strings.Split(endpoint, ","),
 		}
@@ -63,6 +72,7 @@ func (k *kratosDriver) RegisterService(target string, endpoint string) error {
 
 	case ConsulScheme:
 		registerInstance := &registry.ServiceInstance{
+			ID:        instanceId,
 			Name:      strings.TrimPrefix(u.Path, "/"),
 			Endpoints: strings.Split(endpoint, ","),
 		}
