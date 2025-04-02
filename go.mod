@@ -1,4 +1,4 @@
-module github.com/dtm-labs/dtmdriver-kratos
+module github.com/olaola-chat/dtmdriver-kratos
 
 go 1.15
 
